@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #1a1a1a, #4a4a4a);
+        }
+
+        .calculator {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 380px;
+        }
+
+        #display {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 20px;
+            padding: 20px;
+            font-size: 36px;
+            text-align: right;
+            background: rgba(0, 0, 0, 0.3);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        button {
+            padding: 20px;
+            font-size: 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        button:hover::before {
+            opacity: 1;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .operator {
+            background: rgba(255, 149, 0, 0.3);
+            color: #ff9500;
+        }
+
+        .special {
+            background: rgba(169, 169, 169, 0.2);
+            color: #a9a9a9;
+        }
+
+        .equals {
+            background: rgba(255, 149, 0, 0.5);
+            color: #fff;
+        }
+
+        .history {
+            color: rgba(255, 255, 255, 0.4);
+            text-align: right;
+            margin-bottom: 10px;
+            min-height: 24px;
+            font-size: 18px;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        .error {
+            animation: shake 0.3s;
+            color: #ff4444 !important;
+        }
+
+        .memory-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                width: 90%;
+                padding: 15px;
+            }
+            button {
+                padding: 15px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="memory-indicator" id="memoryIndicator"></div>
+    <div class="calculator">
+        <div class="history" id="history"></div>
+        <input type="text" id="display" readonly>
+        <div class="buttons">
+            <button class="special" onclick="memoryClear()">MC</button>
+            <button class="special" onclick="memoryRecall()">MR</button>
+            <button class="special" onclick="memoryAdd()">M+</button>
+            <button class="operator" onclick="appendToDisplay('/')">/</button>
+            
+            <button class="special" onclick="clearDisplay()">C</button>
+            <button onclick="appendToDisplay('7')">7</button>
+            <button onclick="appendToDisplay('8')">8</button>
+            <button onclick="appendToDisplay('9')">9</button>
+            
+            <button class="special" onclick="deleteChar()">⌫</button>
+            <button onclick="appendToDisplay('4')">4</button>
+            <button onclick="appendToDisplay('5')">5</button>
+            <button onclick="appendToDisplay('6')">6</button>
+            
+            <button class="operator" onclick="appendToDisplay('*')">×</button>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('3')">3</button>
+            
+            <button class="operator" onclick="appendToDisplay('-')">-</button>
+            <button onclick="appendToDisplay('0')">0</button>
+            <button onclick="appendToDisplay('.')">.</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="special" onclick="appendToDisplay('%')">%</button>
+            <button class="equals" onclick="calculate()" style="grid-column: span 2">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+        const history = document.getElementById('history');
+        let memory = 0;
+
+        function appendToDisplay(value) {
+            if (display.value === 'Error') clearDisplay();
+            
+            // Prevent multiple decimals
+            if (value === '.' && display.value.split(/[\+\-\*\/]/).pop().includes('.')) return;
+            
+            // Prevent multiple operators
+            const lastChar = display.value.slice(-1);
+            if ('+-*/'.includes(lastChar) && '+-*/'.includes(value)) return;
+            
+            display.value += value;
+            display.classList.remove('error');
+        }
+
+        function clearDisplay() {
+            display.value = '';
+            history.textContent = '';
+            display.classList.remove('error');
+        }
+
+        function deleteChar() {
+            display.value = display.value.slice(0, -1);
+        }
+
+        function calculate() {
+            try {
+                let expression = display.value
+                    .replace(/%/g, '/100')
+                    .replace(/×/g, '*');
+                
+                if (!expression) return;
+                
+                const result = eval(expression);
+                history.textContent = `${expression} =`;
+                display.value = result;
+                
+                // Add to memory display
+                memory = result;
+                updateMemoryIndicator();
+                
+            } catch (error) {
+                display.value = 'Error';
+                display.classList.add('error');
+            }
+        }
+
+        // Memory functions
+        function memoryClear() { memory = 0; updateMemoryIndicator(); }
+        function memoryRecall() { appendToDisplay(memory.toString()); }
+        function memoryAdd() { memory += parseFloat(display.value) || 0; updateMemoryIndicator(); }
+        function updateMemoryIndicator() {
+            document.getElementById('memoryIndicator').textContent = 
+                `Memory: ${memory}`;
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') calculate();
+            if (e.key === 'Escape') clearDisplay();
+            if (e.key === 'Backspace') deleteChar();
+            if ('0123456789.+-*/%'.includes(e.key)) appendToDisplay(e.key);
+        });
+
+        // Initial memory display
+        updateMemoryIndicator();
+    </script>
+</body>
+</html>

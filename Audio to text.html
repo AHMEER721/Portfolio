@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice to Text Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 2rem;
+        }
+
+        #startBtn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 1rem;
+        }
+
+        #startBtn:hover {
+            background: #1557b0;
+        }
+
+        #startBtn.listening {
+            background: #e91e63;
+        }
+
+        #textOutput {
+            width: 100%;
+            height: 200px;
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+
+        .status {
+            color: #666;
+            margin-top: 1rem;
+        }
+
+        .error {
+            color: #e91e63;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voice to Text Converter</h1>
+        <button id="startBtn">Start Recording</button>
+        <textarea id="textOutput" placeholder="Your speech will appear here..."></textarea>
+        <div class="status" id="status">Press the button and start speaking</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const textOutput = document.getElementById('textOutput');
+        const statusElement = document.getElementById('status');
+        const errorElement = document.getElementById('error');
+
+        // Check browser support
+        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!('webkitSpeechRecognition' in window)) {
+            errorElement.textContent = 'Speech recognition not supported in this browser';
+            startBtn.disabled = true;
+        } else {
+            const recognition = new window.webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            let isListening = false;
+
+            recognition.onstart = () => {
+                statusElement.textContent = 'Listening...';
+                startBtn.classList.add('listening');
+                isListening = true;
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0])
+                    .map(result => result.transcript)
+                    .join('');
+
+                textOutput.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                errorElement.textContent = `Error: ${event.error}`;
+            };
+
+            recognition.onend = () => {
+                statusElement.textContent = 'Press the button to start again';
+                startBtn.classList.remove('listening');
+                isListening = false;
+            };
+
+            startBtn.addEventListener('click', () => {
+                if (!isListening) {
+                    recognition.start();
+                } else {
+                    recognition.stop();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
